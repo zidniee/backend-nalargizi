@@ -15,7 +15,7 @@ async function bootstrap() {
     app = await NestFactory.create(AppModule, new ExpressAdapter(server));
     
     // Global API prefix
-    app.setGlobalPrefix('api/v1');
+    app.setGlobalPrefix('api/v1', { exclude: ['/'] });
 
     // Enable CORS for Flutter mobile app
     app.enableCors({
