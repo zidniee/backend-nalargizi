@@ -1,0 +1,959 @@
+{
+  "info": {
+    "_postman_id": "8432a5fe-001d-4076-a05e-85a2ef396781",
+    "name": "NalarGizi API Collection",
+    "description": "Postman collection for NalarGizi backend application.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Parent User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Budi Santoso\",\n  \"email\": \"budi.test@example.com\",\n  \"phoneNumber\": \"+6281234567890\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/auth/register",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.success && response.data && response.data.tokens) {",
+                  "    pm.environment.set(\"token\", response.data.tokens.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"budi.test@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/auth/login",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/auth/refresh",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fetch Current Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/auth/me",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/auth/logout",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Children",
+      "item": [
+        {
+          "name": "Create Child Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"b6a71e84-1845-4299-90b5-e6a881447bd1\",\n  \"fullName\": \"Aris Santoso\",\n  \"gender\": \"male\",\n  \"dateOfBirth\": \"2025-01-01T00:00:00.000Z\",\n  \"placeOfBirth\": \"Jakarta\",\n  \"bloodType\": \"O\",\n  \"photoUrl\": \"https://example.com/aris.jpg\",\n  \"notes\": \"Lahir prematur 1 minggu\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/children",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Children",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/children",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Child by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/children/:id",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Child Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Aris Santoso Pratama\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/children/:id",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Child (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/children/:id",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Growth",
+      "item": [
+        {
+          "name": "Log Growth Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"c7b82f95-2956-53aa-01c6-f7b881447be2\",\n  \"measuredAt\": \"2026-05-01T00:00:00.000Z\",\n  \"weightKg\": 11.2,\n  \"heightCm\": 82.0,\n  \"headCircumferenceCm\": 45.5,\n  \"source\": \"manual\",\n  \"notes\": \"Pengukuran rutin\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/children/:childId/growth-records",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children",
+                ":childId",
+                "growth-records"
+              ],
+              "variable": [
+                {
+                  "key": "childId",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Growth Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/children/:childId/growth-records",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children",
+                ":childId",
+                "growth-records"
+              ],
+              "variable": [
+                {
+                  "key": "childId",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Query WHO Growth Standards",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/growth-standards?gender=male&metric=weight",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "growth-standards"
+              ],
+              "query": [
+                {
+                  "key": "gender",
+                  "value": "male"
+                },
+                {
+                  "key": "metric",
+                  "value": "weight"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Nutrition & Hydration",
+      "item": [
+        {
+          "name": "Create Nutrition Journal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"d8c93a06-3a67-64bb-12d7-a8b991447bf3\",\n  \"journalDate\": \"2026-05-20T00:00:00.000Z\",\n  \"notes\": \"Jurnal makan harian\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/children/:childId/nutrition-journals",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children",
+                ":childId",
+                "nutrition-journals"
+              ],
+              "variable": [
+                {
+                  "key": "childId",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Nutrition Journals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/children/:childId/nutrition-journals",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children",
+                ":childId",
+                "nutrition-journals"
+              ],
+              "variable": [
+                {
+                  "key": "childId",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Meal Log",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"e9da4b17-4b78-75cc-23e8-b9ca02447c04\",\n  \"mealType\": \"breakfast\",\n  \"title\": \"Bubur Ayam\",\n  \"subtitle\": \"Bubur beras merah ayam\",\n  \"calories\": 250,\n  \"portion\": \"1 mangkok\",\n  \"statusLabel\": \"Habis\",\n  \"statusColor\": \"green\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/nutrition-journals/:journalId/meals",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "nutrition-journals",
+                ":journalId",
+                "meals"
+              ],
+              "variable": [
+                {
+                  "key": "journalId",
+                  "value": "d8c93a06-3a67-64bb-12d7-a8b991447bf3"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Meal Log",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bubur Ayam Wortel\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/nutrition-meals/:mealId",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "nutrition-meals",
+                ":mealId"
+              ],
+              "variable": [
+                {
+                  "key": "mealId",
+                  "value": "e9da4b17-4b78-75cc-23e8-b9ca02447c04"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Meal Log (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/nutrition-meals/:mealId",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "nutrition-meals",
+                ":mealId"
+              ],
+              "variable": [
+                {
+                  "key": "mealId",
+                  "value": "e9da4b17-4b78-75cc-23e8-b9ca02447c04"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Log Hydration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"faeb5c28-5c89-86dd-34f9-cadb13558d15\",\n  \"logDate\": \"2026-05-20T08:00:00.000Z\",\n  \"cupsTarget\": 8,\n  \"cupsConsumed\": 4,\n  \"unit\": \"cups\",\n  \"notes\": \"Minum air mineral\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/children/:childId/hydration-logs",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children",
+                ":childId",
+                "hydration-logs"
+              ],
+              "variable": [
+                {
+                  "key": "childId",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Today's Hydration",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/children/:childId/hydration-logs/today",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children",
+                ":childId",
+                "hydration-logs",
+                "today"
+              ],
+              "variable": [
+                {
+                  "key": "childId",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI Nutrition Analysis (Gemini)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Bubur ayam wortel setengah porsi\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/nutrition/analyze",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "nutrition",
+                "analyze"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Posyandu & Immunizations",
+      "item": [
+        {
+          "name": "Create Posyandu Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"0bfa6d39-6d9a-97ee-45fa-daec24669e26\",\n  \"title\": \"Timbang Rutin Mei\",\n  \"category\": \"Timbang\",\n  \"location\": \"Posyandu Melati\",\n  \"scheduledAt\": \"2026-05-25T09:00:00.000Z\",\n  \"note\": \"Bawa KMS\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/children/:childId/posyandu-schedules",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children",
+                ":childId",
+                "posyandu-schedules"
+              ],
+              "variable": [
+                {
+                  "key": "childId",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Posyandu Schedule",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"completedAt\": \"2026-05-25T10:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/posyandu-schedules/:id/complete",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "posyandu-schedules",
+                ":id",
+                "complete"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "0bfa6d39-6d9a-97ee-45fa-daec24669e26"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Posyandu Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/posyandu/overview?childId=b6a71e84-1845-4299-90b5-e6a881447bd1",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "posyandu",
+                "overview"
+              ],
+              "query": [
+                {
+                  "key": "childId",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Immunization Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"1cfb7e4a-7eab-a8ff-56fb-ebfd35770f37\",\n  \"immunizationDefinitionId\": \"2d0c8f5b-8fbc-b9ff-67fc-fcfe46881f48\",\n  \"givenAt\": \"2026-05-20T00:00:00.000Z\",\n  \"status\": \"done\",\n  \"facilityName\": \"Puskesmas Melati\",\n  \"batchNumber\": \"VAKSIN-BCG-002\",\n  \"note\": \"Sehat\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/children/:childId/immunization-records",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children",
+                ":childId",
+                "immunization-records"
+              ],
+              "variable": [
+                {
+                  "key": "childId",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Immunization Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/children/:childId/immunization-records",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "children",
+                ":childId",
+                "immunization-records"
+              ],
+              "variable": [
+                {
+                  "key": "childId",
+                  "value": "b6a71e84-1845-4299-90b5-e6a881447bd1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Offline Synchronization",
+      "item": [
+        {
+          "name": "Perform Bulk Sync",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lastSyncedAt\": \"2026-05-19T00:00:00.000Z\",\n  \"operations\": [\n    {\n      \"action\": \"create\",\n      \"type\": \"growth\",\n      \"clientUniqueId\": \"c7b82f95-2956-53aa-01c6-f7b881447be2\",\n      \"data\": {\n        \"childId\": \"b6a71e84-1845-4299-90b5-e6a881447bd1\",\n        \"measuredAt\": \"2026-05-20T08:00:00.000Z\",\n        \"weightKg\": 12.0,\n        \"heightCm\": 84.0,\n        \"headCircumferenceCm\": 46.0,\n        \"notes\": \"Offline sync log\"\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{host}}/sync",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "sync"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "host",
+      "value": "http://localhost:3000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

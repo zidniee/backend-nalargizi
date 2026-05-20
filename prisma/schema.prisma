@@ -1,0 +1,329 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  user
+  health_worker
+  admin
+  superadmin
+}
+
+enum AccountStatus {
+  active
+  inactive
+  suspended
+}
+
+enum Gender {
+  male
+  female
+}
+
+enum GrowthSource {
+  manual
+  import
+  sync
+}
+
+enum MealType {
+  breakfast
+  lunch
+  dinner
+  snack
+}
+
+enum ImmunizationStatus {
+  done
+  pending
+  skipped
+}
+
+enum NotificationStatus {
+  unread
+  read
+  archived
+}
+
+model User {
+  id               String            @id @default(uuid()) @db.Uuid
+  fullName         String            @map("full_name") @db.VarChar(150)
+  email            String?           @unique @db.VarChar(150)
+  phoneNumber      String?           @unique @map("phone_number") @db.VarChar(30)
+  passwordHash     String?           @map("password_hash")
+  role             Role              @default(user)
+  status           AccountStatus     @default(active)
+  emailVerifiedAt  DateTime?         @map("email_verified_at")
+  lastLoginAt      DateTime?         @map("last_login_at")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  deletedAt        DateTime?         @map("deleted_at")
+  children         Child[]
+  growthRecorded   GrowthRecord[]    @relation("RecordedBy")
+  posyanduCreated  PosyanduSchedule[] @relation("CreatedBy")
+  deviceTokens     DeviceToken[]
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+model Child {
+  id                String             @id @db.Uuid
+  userId            String             @map("user_id") @db.Uuid
+  fullName          String             @map("full_name") @db.VarChar(150)
+  gender            Gender
+  dateOfBirth       DateTime           @map("date_of_birth") @db.Date
+  placeOfBirth      String?            @map("place_of_birth") @db.VarChar(150)
+  bloodType         String?            @map("blood_type") @db.VarChar(5)
+  photoUrl          String?            @map("photo_url")
+  notes             String?            @db.Text
+  status            String             @default("active")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  deletedAt         DateTime?          @map("deleted_at")
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  growthRecords     GrowthRecord[]
+  nutritionJournals NutritionJournal[]
+  hydrationLogs     HydrationLog[]
+  immunizationRecs  ImmunizationRecord[]
+  posyanduSchedules PosyanduSchedule[]
+  notifications     Notification[]
+
+  @@index([userId])
+  @@index([dateOfBirth])
+  @@map("children")
+}
+
+model GrowthRecord {
+  id                  String       @id @db.Uuid
+  childId             String       @map("child_id") @db.Uuid
+  measuredAt          DateTime     @map("measured_at") @db.Date
+  weightKg            Decimal      @map("weight_kg") @db.Decimal(5, 2)
+  heightCm            Decimal      @map("height_cm") @db.Decimal(5, 2)
+  headCircumferenceCm Decimal?     @map("head_circumference_cm") @db.Decimal(5, 2)
+  zScoreWeight        Decimal?     @map("z_score_weight") @db.Decimal(6, 2)
+  zScoreHeight        Decimal?     @map("z_score_height") @db.Decimal(6, 2)
+  zScoreBmi           Decimal?     @map("z_score_bmi") @db.Decimal(6, 2)
+  recordedByUserId    String?      @map("recorded_by_user_id") @db.Uuid
+  source              GrowthSource @default(manual)
+  notes               String?      @db.Text
+  clientCreatedAt     DateTime     @default(now()) @map("client_created_at")
+  lastModifiedAt      DateTime     @default(now()) @map("last_modified_at")
+  deletedAt           DateTime?    @map("deleted_at")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  child               Child        @relation(fields: [childId], references: [id], onDelete: Cascade)
+  recordedBy          User?        @relation("RecordedBy", fields: [recordedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([childId, measuredAt])
+  @@map("growth_records")
+}
+
+model NutritionJournal {
+  id              String          @id @db.Uuid
+  childId         String          @map("child_id") @db.Uuid
+  journalDate     DateTime        @map("journal_date") @db.Date
+  totalCalories   Int?            @map("total_calories")
+  totalProteinG   Decimal?        @map("total_protein_g") @db.Decimal(6, 2)
+  totalCarbG      Decimal?        @map("total_carb_g") @db.Decimal(6, 2)
+  totalFatG       Decimal?        @map("total_fat_g") @db.Decimal(6, 2)
+  totalWaterMl    Int?            @map("total_water_ml")
+  status          String          @default("submitted")
+  notes           String?         @db.Text
+  clientCreatedAt DateTime        @default(now()) @map("client_created_at")
+  lastModifiedAt  DateTime        @default(now()) @map("last_modified_at")
+  deletedAt       DateTime?       @map("deleted_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  child           Child           @relation(fields: [childId], references: [id], onDelete: Cascade)
+  meals           NutritionMeal[]
+
+  @@index([childId, journalDate])
+  @@map("nutrition_journals")
+}
+
+model NutritionMeal {
+  id                 String           @id @db.Uuid
+  nutritionJournalId String           @map("nutrition_journal_id") @db.Uuid
+  mealType           MealType         @map("meal_type")
+  title              String           @db.VarChar(200)
+  subtitle           String?          @db.VarChar(200)
+  calories           Int?
+  portion            String?          @db.VarChar(100)
+  statusLabel        String?          @map("status_label") @db.VarChar(50)
+  statusColor        String?          @map("status_color") @db.VarChar(30)
+  consumedAt         DateTime?        @map("consumed_at")
+  isAiGenerated      Boolean          @default(false) @map("is_ai_generated")
+  aiConfidence       Decimal?         @map("ai_confidence") @db.Decimal(3, 2)
+  rawInput           String?          @map("raw_input") @db.Text
+  clientCreatedAt    DateTime         @default(now()) @map("client_created_at")
+  lastModifiedAt     DateTime         @default(now()) @map("last_modified_at")
+  deletedAt          DateTime?        @map("deleted_at")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  journal            NutritionJournal @relation(fields: [nutritionJournalId], references: [id], onDelete: Cascade)
+
+  @@index([nutritionJournalId, mealType])
+  @@map("nutrition_meals")
+}
+
+model HydrationLog {
+  id              String    @id @db.Uuid
+  childId         String    @map("child_id") @db.Uuid
+  logDate         DateTime  @map("log_date") @db.Date
+  cupsTarget      Int       @map("cups_target")
+  cupsConsumed    Int       @map("cups_consumed")
+  unit            String    @default("cups") @db.VarChar(20)
+  notes           String?   @db.Text
+  clientCreatedAt DateTime  @default(now()) @map("client_created_at")
+  lastModifiedAt  DateTime  @default(now()) @map("last_modified_at")
+  deletedAt       DateTime? @map("deleted_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  child           Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId, logDate])
+  @@map("hydration_logs")
+}
+
+model WhoGrowthStandard {
+  id         Int     @id @default(autoincrement())
+  gender     Gender
+  ageMonths  Int     @map("age_months")
+  metric     String  // "weight", "height", "bmi", "head"
+  sd3neg     Decimal @db.Decimal(6, 2)
+  sd2neg     Decimal @db.Decimal(6, 2)
+  sd1neg     Decimal @db.Decimal(6, 2)
+  median     Decimal @db.Decimal(6, 2)
+  sd1        Decimal @db.Decimal(6, 2)
+  sd2        Decimal @db.Decimal(6, 2)
+  sd3        Decimal @db.Decimal(6, 2)
+
+  @@unique([gender, metric, ageMonths])
+  @@index([gender, metric, ageMonths])
+  @@map("who_growth_standards")
+}
+
+model ImmunizationDefinition {
+  id                 String               @id @default(uuid()) @db.Uuid
+  code               String               @unique @db.VarChar(50)
+  name               String               @db.VarChar(150)
+  scheduleAgeMonths  Int?                 @map("schedule_age_months")
+  description        String?              @db.Text
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  records            ImmunizationRecord[]
+
+  @@map("immunization_definitions")
+}
+
+model ImmunizationRecord {
+  id                       String             @id @db.Uuid
+  childId                  String             @map("child_id") @db.Uuid
+  immunizationDefinitionId String             @map("immunization_definition_id") @db.Uuid
+  givenAt                  DateTime?          @map("given_at") @db.Date
+  status                   ImmunizationStatus @default(pending)
+  facilityName             String?            @map("facility_name") @db.VarChar(150)
+  batchNumber              String?            @map("batch_number") @db.VarChar(100)
+  note                     String?            @db.Text
+  clientCreatedAt          DateTime           @default(now()) @map("client_created_at")
+  lastModifiedAt           DateTime           @default(now()) @map("last_modified_at")
+  deletedAt                DateTime?          @map("deleted_at")
+  createdAt                DateTime           @default(now()) @map("created_at")
+  updatedAt                DateTime           @updatedAt @map("updated_at")
+
+  child                    Child              @relation(fields: [childId], references: [id], onDelete: Cascade)
+  definition               ImmunizationDefinition @relation(fields: [immunizationDefinitionId], references: [id], onDelete: Cascade)
+
+  @@index([childId, immunizationDefinitionId])
+  @@map("immunization_records")
+}
+
+model PosyanduSchedule {
+  id              String    @id @db.Uuid
+  childId         String    @map("child_id") @db.Uuid
+  title           String    @db.VarChar(200)
+  category        String    @db.VarChar(100)
+  location        String    @db.VarChar(200)
+  scheduledAt     DateTime  @map("scheduled_at")
+  note            String?   @db.Text
+  isCompleted     Boolean   @default(false) @map("is_completed")
+  completedAt     DateTime? @map("completed_at")
+  createdByUserId String?   @map("created_by_user_id") @db.Uuid
+  clientCreatedAt DateTime  @default(now()) @map("client_created_at")
+  lastModifiedAt  DateTime  @default(now()) @map("last_modified_at")
+  deletedAt       DateTime? @map("deleted_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  child           Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  createdBy       User?     @relation("CreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([childId, scheduledAt])
+  @@map("posyandu_schedules")
+}
+
+model DeviceToken {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  deviceId   String   @map("device_id") @db.VarChar(150)
+  platform   String   @db.VarChar(20)
+  token      String   @db.Text
+  isActive   Boolean  @default(true) @map("is_active")
+  lastSeenAt DateTime? @map("last_seen_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, deviceId])
+  @@map("device_tokens")
+}
+
+model Notification {
+  id        String             @id @default(uuid()) @db.Uuid
+  userId    String             @map("user_id") @db.Uuid
+  childId   String?            @map("child_id") @db.Uuid
+  type      String             @db.VarChar(50)
+  title     String             @db.VarChar(200)
+  body      String             @db.Text
+  data      Json?
+  status    NotificationStatus @default(unread)
+  sentAt    DateTime?          @map("sent_at")
+  readAt    DateTime?          @map("read_at")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  child     Child?             @relation(fields: [childId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  actorUserId  String?  @map("actor_user_id") @db.Uuid
+  entityType   String   @map("entity_type") @db.VarChar(100)
+  entityId     String   @map("entity_id") @db.Uuid
+  action       String   @db.VarChar(50)
+  beforeData   Json?    @map("before_data")
+  afterData    Json?    @map("after_data")
+  ipAddress    String?  @map("ip_address") @db.VarChar(50)
+  userAgent    String?  @map("user_agent") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  actor        User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@map("audit_logs")
+}
