@@ -22,9 +22,6 @@ export interface JwtPayload {
 
 @Injectable()
 export class AuthService {
-  // In-memory refresh token store; in production use Redis
-  private refreshTokens = new Map<string, string>();
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -126,24 +123,34 @@ export class AuthService {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
 
-      // Verify refresh token exists in store (rotation check)
-      const storedToken = this.refreshTokens.get(payload.sub);
-      if (storedToken !== dto.refreshToken) {
-        throw new UnauthorizedException('Refresh token has been revoked');
+      // Verify refresh token exists in database (rotation check)
+      const storedToken = await this.prisma.refreshToken.findUnique({
+        where: { token: dto.refreshToken },
+      });
+
+      if (!storedToken || storedToken.userId !== payload.sub || storedToken.expiresAt < new Date()) {
+        throw new UnauthorizedException('Invalid, expired, or revoked refresh token');
       }
 
-      // Rotate: delete old token, issue new pair
-      this.refreshTokens.delete(payload.sub);
+      // Rotate: delete old token
+      await this.prisma.refreshToken.delete({
+        where: { id: storedToken.id },
+      });
 
       return this.generateTokens(payload.sub, payload.email, payload.role);
-    } catch {
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }
 
-  logout(userId: string): Promise<{ message: string }> {
-    this.refreshTokens.delete(userId);
-    return Promise.resolve({ message: 'Logged out successfully' });
+  async logout(userId: string): Promise<{ message: string }> {
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId },
+    });
+    return { message: 'Logged out successfully' };
   }
 
   async getProfile(userId: string): Promise<Record<string, unknown>> {
@@ -169,6 +176,45 @@ export class AuthService {
     return user;
   }
 
+  private parseExpiry(expiry: string | number): Date {
+    const date = new Date();
+    if (typeof expiry === 'number') {
+      date.setSeconds(date.getSeconds() + expiry);
+      return date;
+    }
+    const amount = parseInt(expiry, 10);
+    const unit = expiry.replace(/^[0-9]+/, '').trim().toLowerCase();
+    switch (unit) {
+      case 'd':
+      case 'day':
+      case 'days':
+        date.setDate(date.getDate() + amount);
+        break;
+      case 'h':
+      case 'hour':
+      case 'hours':
+        date.setHours(date.getHours() + amount);
+        break;
+      case 'm':
+      case 'minute':
+      case 'minutes':
+        date.setMinutes(date.getMinutes() + amount);
+        break;
+      case 's':
+      case 'second':
+      case 'seconds':
+        date.setSeconds(date.getSeconds() + amount);
+        break;
+      default:
+        if (!isNaN(Number(expiry))) {
+          date.setSeconds(date.getSeconds() + Number(expiry));
+        } else {
+          date.setDate(date.getDate() + 7);
+        }
+    }
+    return date;
+  }
+
   private async generateTokens(
     sub: string,
     email: string,
@@ -192,8 +238,24 @@ export class AuthService {
       }),
     ]);
 
-    // Store refresh token for rotation tracking
-    this.refreshTokens.set(sub, refreshToken);
+    const expiresAt = this.parseExpiry(refreshExpiresIn);
+
+    // Clean up expired tokens for this user to keep table small
+    await this.prisma.refreshToken.deleteMany({
+      where: {
+        userId: sub,
+        expiresAt: { lt: new Date() },
+      },
+    });
+
+    // Store new refresh token for rotation tracking in database
+    await this.prisma.refreshToken.create({
+      data: {
+        token: refreshToken,
+        userId: sub,
+        expiresAt,
+      },
+    });
 
     return { accessToken, refreshToken };
   }
