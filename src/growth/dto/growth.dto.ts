@@ -8,6 +8,7 @@ import {
   IsEnum,
 } from 'class-validator';
 import { GrowthSource } from '@prisma/client';
+import { Trim, SanitizeHtml } from '../../common/decorators/sanitize.decorator';
 
 export class CreateGrowthRecordDto {
   @IsUUID()
@@ -32,6 +33,8 @@ export class CreateGrowthRecordDto {
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   notes?: string;
 
   @IsOptional()
@@ -46,9 +49,13 @@ export class CreateGrowthRecordDto {
 export class GrowthStandardsQueryDto {
   @IsNotEmpty()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   gender!: string;
 
   @IsNotEmpty()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   metric!: string;
 }

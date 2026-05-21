@@ -9,6 +9,7 @@ import {
   IsNotEmpty,
 } from 'class-validator';
 import { MealType } from '@prisma/client';
+import { Trim, SanitizeHtml } from '../../common/decorators/sanitize.decorator';
 
 export class CreateNutritionJournalDto {
   @IsUUID()
@@ -39,6 +40,8 @@ export class CreateNutritionJournalDto {
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   notes?: string;
 
   @IsOptional()
@@ -59,10 +62,14 @@ export class CreateMealDto {
 
   @IsNotEmpty()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   title!: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   subtitle?: string;
 
   @IsOptional()
@@ -71,14 +78,20 @@ export class CreateMealDto {
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   portion?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   statusLabel?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   statusColor?: string;
 
   @IsOptional()
@@ -97,10 +110,14 @@ export class CreateMealDto {
 export class UpdateMealDto {
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   title?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   subtitle?: string;
 
   @IsOptional()
@@ -109,14 +126,20 @@ export class UpdateMealDto {
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   portion?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   statusLabel?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   statusColor?: string;
 }
 
@@ -135,10 +158,14 @@ export class CreateHydrationLogDto {
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   unit?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   notes?: string;
 
   @IsOptional()
@@ -153,5 +180,7 @@ export class CreateHydrationLogDto {
 export class AnalyzeNutritionDto {
   @IsNotEmpty()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   text!: string;
 }
