@@ -23,11 +23,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Handle Prisma known request errors
     if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      const isProduction = process.env.NODE_ENV === 'production';
       switch (exception.code) {
         case 'P2002': {
           status = HttpStatus.CONFLICT;
           const target = (exception.meta?.target as string[]) || [];
-          message = `Duplicate entry for field(s): ${target.join(', ')}`;
+          message = isProduction
+            ? 'Duplicate entry: A record with this unique identifier or value already exists.'
+            : `Duplicate entry for field(s): ${target.join(', ')}`;
           errors = target.map((field) => ({
             field,
             message: `Value for '${field}' already exists`,
@@ -41,7 +44,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         case 'P2003': {
           status = HttpStatus.BAD_REQUEST;
           const fieldName = (exception.meta?.field_name as string) || 'unknown';
-          message = `Invalid reference: related record not found for '${fieldName}'`;
+          message = isProduction
+            ? 'Invalid reference: Related parent record was not found.'
+            : `Invalid reference: related record not found for '${fieldName}'`;
           errors = [
             {
               field: fieldName,
@@ -52,7 +57,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         }
         default:
           status = HttpStatus.BAD_REQUEST;
-          message = `Database error: ${exception.code}`;
+          message = isProduction
+            ? 'Database operation failed'
+            : `Database error: ${exception.code}`;
       }
       this.logger.warn(`Prisma error ${exception.code}: ${exception.message}`);
     }

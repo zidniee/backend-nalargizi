@@ -7,6 +7,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { Gender } from '@prisma/client';
+import { Trim, SanitizeHtml } from '../../common/decorators/sanitize.decorator';
 
 export class CreateChildDto {
   @IsUUID()
@@ -14,6 +15,8 @@ export class CreateChildDto {
 
   @IsNotEmpty()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   fullName!: string;
 
   @IsEnum(Gender)
@@ -24,24 +27,33 @@ export class CreateChildDto {
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   placeOfBirth?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   bloodType?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
   photoUrl?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   notes?: string;
 }
 
 export class UpdateChildDto {
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   fullName?: string;
 
   @IsOptional()
@@ -54,17 +66,24 @@ export class UpdateChildDto {
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   placeOfBirth?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   bloodType?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
   photoUrl?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   notes?: string;
 }

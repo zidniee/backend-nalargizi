@@ -2,12 +2,20 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { RegisterDto, LoginDto, RefreshTokenDto } from './dto/auth.dto';
+import { Prisma } from '@prisma/client';
+import {
+  RegisterDto,
+  LoginDto,
+  RefreshTokenDto,
+  OAuthDto,
+} from './dto/auth.dto';
 
 export interface AuthTokens {
   accessToken: string;
@@ -117,6 +125,95 @@ export class AuthService {
     };
   }
 
+  async oauthLogin(
+    dto: OAuthDto,
+  ): Promise<{ user: Record<string, unknown>; tokens: AuthTokens }> {
+    if (dto.provider !== 'google') {
+      throw new BadRequestException('Unsupported social login provider');
+    }
+
+    try {
+      const client = new OAuth2Client();
+      const clientIds = [
+        this.configService.get<string>('GOOGLE_CLIENT_ID_WEB'),
+        this.configService.get<string>('GOOGLE_CLIENT_ID_ANDROID'),
+        this.configService.get<string>('GOOGLE_CLIENT_ID_IOS'),
+      ].filter(Boolean) as string[];
+
+      const ticket = await client.verifyIdToken({
+        idToken: dto.idToken,
+        audience: clientIds,
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new UnauthorizedException(
+          'Google token payload is missing email',
+        );
+      }
+
+      const email = payload.email.toLowerCase();
+      const fullName = payload.name || email.split('@')[0];
+      const isEmailVerified = payload.email_verified === true;
+
+      // Check if user exists
+      let user = await this.prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (!user) {
+        // Register user automatically
+        user = await this.prisma.user.create({
+          data: {
+            fullName,
+            email,
+            emailVerifiedAt: isEmailVerified ? new Date() : null,
+            status: 'active',
+            role: 'user',
+          },
+        });
+      } else {
+        // Update user login details
+        const updateData: Prisma.UserUpdateInput = { lastLoginAt: new Date() };
+        if (isEmailVerified && !user.emailVerifiedAt) {
+          updateData.emailVerifiedAt = new Date();
+        }
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: updateData,
+        });
+      }
+
+      const tokens = await this.generateTokens(
+        user.id,
+        user.email ?? '',
+        user.role,
+      );
+
+      return {
+        user: {
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+          role: user.role,
+          status: user.status,
+        },
+        tokens,
+      };
+    } catch (error) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      }
+      throw new UnauthorizedException(
+        `Google login failed: ${error instanceof Error ? error.message : 'Invalid token'}`,
+      );
+    }
+  }
+
   async refresh(dto: RefreshTokenDto): Promise<AuthTokens> {
     try {
       const payload = this.jwtService.verify<JwtPayload>(dto.refreshToken, {
@@ -128,8 +225,14 @@ export class AuthService {
         where: { token: dto.refreshToken },
       });
 
-      if (!storedToken || storedToken.userId !== payload.sub || storedToken.expiresAt < new Date()) {
-        throw new UnauthorizedException('Invalid, expired, or revoked refresh token');
+      if (
+        !storedToken ||
+        storedToken.userId !== payload.sub ||
+        storedToken.expiresAt < new Date()
+      ) {
+        throw new UnauthorizedException(
+          'Invalid, expired, or revoked refresh token',
+        );
       }
 
       // Rotate: delete old token
@@ -183,7 +286,10 @@ export class AuthService {
       return date;
     }
     const amount = parseInt(expiry, 10);
-    const unit = expiry.replace(/^[0-9]+/, '').trim().toLowerCase();
+    const unit = expiry
+      .replace(/^[0-9]+/, '')
+      .trim()
+      .toLowerCase();
     switch (unit) {
       case 'd':
       case 'day':

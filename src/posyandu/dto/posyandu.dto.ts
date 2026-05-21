@@ -7,6 +7,7 @@ import {
   IsEnum,
 } from 'class-validator';
 import { ImmunizationStatus } from '@prisma/client';
+import { Trim, SanitizeHtml } from '../../common/decorators/sanitize.decorator';
 
 export class CreatePosyanduScheduleDto {
   @IsUUID()
@@ -14,14 +15,20 @@ export class CreatePosyanduScheduleDto {
 
   @IsNotEmpty()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   title!: string;
 
   @IsNotEmpty()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   category!: string;
 
   @IsNotEmpty()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   location!: string;
 
   @IsDateString()
@@ -29,6 +36,8 @@ export class CreatePosyanduScheduleDto {
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   note?: string;
 
   @IsOptional()
@@ -63,14 +72,20 @@ export class CreateImmunizationRecordDto {
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   facilityName?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   batchNumber?: string;
 
   @IsOptional()
   @IsString()
+  @Trim()
+  @SanitizeHtml()
   note?: string;
 
   @IsOptional()

@@ -1,38 +1,31 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
-import { TransformInterceptor } from './common/interceptors/transform.interceptor';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { setupApp } from './common/utils/setup-app';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Global API prefix
-  app.setGlobalPrefix('api/v1', { exclude: ['/'] });
+  const configService = app.get(ConfigService);
+  const nodeEnv = configService.get<string>('NODE_ENV') || 'development';
+  const jwtSecret = configService.get<string>('JWT_SECRET');
+  const jwtRefreshSecret = configService.get<string>('JWT_REFRESH_SECRET');
 
-  // Enable CORS for Flutter mobile app
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
+  if (nodeEnv === 'production') {
+    if (!jwtSecret || jwtSecret === 'change-me-in-production') {
+      throw new Error('FATAL: JWT_SECRET is unsafe for production deployment.');
+    }
+    if (!jwtRefreshSecret || jwtRefreshSecret === 'change-me-in-production') {
+      throw new Error(
+        'FATAL: JWT_REFRESH_SECRET is unsafe for production deployment.',
+      );
+    }
+  }
 
-  // Global validation pipe with whitelist and transform
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
+  // Set up unified configurations
+  setupApp(app);
 
-  // Global response transformer
-  app.useGlobalInterceptors(new TransformInterceptor());
-
-  // Global exception filter
-  app.useGlobalFilters(new AllExceptionsFilter());
-
-  const port = process.env.PORT ?? 3000;
+  const port = configService.get<number>('PORT') ?? 3000;
   await app.listen(port);
   console.log(
     `🚀 NalarGizi API is running on: http://localhost:${port}/api/v1`,
